@@ -325,14 +325,33 @@ instance Menge IstPartnerstadtVon3 where
 
 instance Relation IstPartnerstadtVon3 where
   istLinkstotal  = istLinkstotalIPV3
---  istRechtstotal = istRechtstotalIPV3
---  istReflexiv = istReflexivIPV3
---  istSymmetrisch = istSymmetrischIPV3
--- istTransitiv 
+  istRechtstotal = istRechtstotalIPV3
+  istReflexiv = istReflexivIPV3
+  istSymmetrisch = istSymmetrischIPV3
+  istTransitiv (IPV3 (MT3 predicate)) = istTransitivIPV1 (MT1 allPairsMT3) (MT1 allPairsMT3)
+    where allPairsMT3 = [(a, b) | a <- defaultValue, b <- defaultValue, predicate (a, b)]
 
+-- Überprüft, ob für jede Landeshauptstadt mindestens ein Paar existiert, in dem sie der erste Eintrag ist.
 istLinkstotalIPV3 :: Defaultable Landeshauptstadt => IstPartnerstadtVon3 -> Bool
-istLinkstotalIPV3 (IPV3 (MT3 predicate)) = all (\x -> any (\(a, _) -> a == x) allPairs) defaultValue
-  where allPairs = [(a, b) | a <- defaultValue, b <- defaultValue, predicate (a, b)]
+istLinkstotalIPV3 (IPV3 (MT3 predicate)) = all (\x -> any (\(a, _) -> a == x) allPairsMT3) defaultValue
+  where allPairsMT3 = [(a, b) | a <- defaultValue, b <- defaultValue, predicate (a, b)]
+
+-- Überprüft, ob für jede Landeshauptstadt ein Paar (x,x) existiert.
+istRechtstotalIPV3 :: Defaultable Landeshauptstadt => IstPartnerstadtVon3 -> Bool
+istRechtstotalIPV3 (IPV3 (MT3 predicate)) = all (\x -> any (\(_, a) -> a == x) allPairsMT3) defaultValue
+  where allPairsMT3 = [(a, b) | a <- defaultValue, b <- defaultValue, predicate (a, b)]
+
+-- Überprüft, ob für jedes Paar (x,y) auch das Paar (y,x) existiert.
+istReflexivIPV3 :: Defaultable Landeshauptstadt => IstPartnerstadtVon3 -> Bool
+istReflexivIPV3 (IPV3 (MT3 predicate)) =  all (\(x, y) -> x == y) allPairsMT3
+  where allPairsMT3 = [(a, b) | a <- defaultValue, b <- defaultValue, predicate (a, b)]
+
+-- Überprüft, ob für jedes Paar (x,y) auch das Paar (y,x) existiert.
+istSymmetrischIPV3 :: IstPartnerstadtVon3 -> Bool
+istSymmetrischIPV3 (IPV3 (MT3 predicate))  = all (\(x, y) -> elem (y, x) allPairsMT3) allPairsMT3
+   where allPairsMT3 = [(a, b) | a <- defaultValue, b <- defaultValue, predicate (a, b)]
+
+
 ------------------------------------------------------------------------------ Tests ---------------------------------------------------------------------------------
 
 main = do
@@ -556,12 +575,18 @@ main = do
   putStrLn ""
   putStrLn ""
   putStrLn "----------(b)------------------------------------------------------------------------------------------------"
-  let bIPV3 = \e -> if e == (B,B)                                        then True else False
-      eIPV3 = \e -> if e == (E,E)                                        then True else False
-      beIPV3 = \e -> if e == (B,B) || e == (E,E)                         then True else False
-      ebIPV3 = \e -> if e == (E,E) || e == (B,B)                         then True else False
-      bgIPV3 = \e -> if e == (B,B) || e == (G,G)                         then True else False
-      biIPV3 = \e -> if e == (B,B) || e == (I,I)                         then True else False
+  let bIPV3 = \e -> if e == (B,B)                                           then True else False
+      eIPV3 = \e -> if e == (E,E)                                           then True else False
+      beIPV3 = \e -> if e == (B,B) || e == (E,E)                            then True else False
+      ebIPV3 = \e -> if e == (E,E) || e == (B,B)                            then True else False
+      bgIPV3 = \e -> if e == (B,B) || e == (G,G)                            then True else False
+      biIPV3 = \e -> if e == (B,B) || e == (I,I)                            then True else False
+      linkstotal_true = \e -> if e == (B,B) || e == (E, B) || e == (G, B) || e == (I, B) || e == (K, B) || e == (L, B) || e == (P, B) || e == (S, B) || e == (W, B)  then True else False
+      beispiel2 = \e -> if e == (B,E) || e == (E, G)                        then True else False
+      rechtstotal_true = \e -> if e == (B,B) || e == (B, E) || e == (B, G) || e == (B, I) || e == (B, K) || e == (B, L) || e == (B, P) || e == (B, S) || e == (B, W)  then True else False
+      symmetrisch_true = \e -> if e == (B,E) || e == (E, B) || e == (B, B)  then True else False
+      reflexiv_true = \e -> if e == (B,B) || e == (E, E)                    then True else False
+      transitiv_true = \e -> if e == (B,E) || e == (E, G) || e == (B, G)    then True else False
 
   putStrLn ""
   putStrLn $ "leereMenge: " ++ zeige (leereMenge :: IstPartnerstadtVon3)
@@ -619,4 +644,19 @@ main = do
   putStrLn $ "sindQuerUeberlappend {(B,B),(G,G)} {(B,B), (I,I)}: " ++ (show $ sindQuerUeberlappend (IPV3(MT3 bgIPV3)) (IPV3(MT3 biIPV3)))
   putStrLn $ "sindQuerUeberlappend    {(B,B)} {(B,B),(E,E)}: " ++ (show $ sindQuerUeberlappend (IPV3(MT3 bIPV3)) (IPV3(MT3 beIPV3)))
   putStrLn $ "sindQuerUeberlappend {(B,B),(E,E)}    {(B,B)}: " ++ (show $ sindQuerUeberlappend (IPV3(MT3 beIPV3)) (IPV3(MT3 bIPV3)))
+  putStrLn ""
+  putStrLn $ "istLinkstotal {(B,B), (E,B), (G,B), (I,B), (K,B), (L,B), (P,B), (S,B), (W,B)} : " ++ show (istLinkstotal (IPV3(MT3 linkstotal_true)))
+  putStrLn $ "istLinkstotal {(B,E), (E,G)}: " ++ show (istLinkstotal (IPV3(MT3 beispiel2)))
+  putStrLn ""
+  putStrLn $ "istRechtstotal {(B,B), (B,E), (B,G), (B,I), (B,K), (B,L), (B,P), (B,S), (B,W)} : " ++ show (istRechtstotal (IPV3(MT3 rechtstotal_true)))
+  putStrLn $ "istRechtstotal {(B,E), (E,G)}: " ++ show (istRechtstotal (IPV3(MT3 beispiel2)))
+  putStrLn ""
+  putStrLn $ "istReflexiv {(B,B), (E,E)}: " ++ show (istReflexiv (IPV3(MT3 reflexiv_true)))
+  putStrLn $ "istReflexiv {(B,E), (E,G)}: " ++ show (istReflexiv (IPV3(MT3 beispiel2)))
+  putStrLn ""
+  putStrLn $ "istSymmetrisch {(B,E), (E,B), (B,B)}: " ++ show (istSymmetrisch (IPV3(MT3 symmetrisch_true)))
+  putStrLn $ "istSymmetrisch {(B,E), (E,G)}: " ++ show (istSymmetrisch (IPV3(MT3 beispiel2)))
+  putStrLn ""
+  putStrLn $ "transitiv_true {(B,E), (E,G), (B,G)}: " ++ show (istTransitiv (IPV3(MT3 transitiv_true)))
+  putStrLn $ "istTransitiv {(B,E), (E,G)}: " ++ show (istTransitiv (IPV3(MT3 beispiel2)))
   putStrLn ""
