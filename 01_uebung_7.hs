@@ -267,18 +267,48 @@ instance Menge IstPartnerstadtVon1 where
   zeige (IPV1 m1) = zeigeMT1 m1
 
 instance Relation IstPartnerstadtVon1 where
---  istLinkstotal  = istLinkstotalMT1
---  istRechtstotal :: m -> Bool
---  istReflexiv :: m -> Bool
---  istSymmetrisch :: m -> Bool
---  istTransitiv :: m -> Bool
+  istLinkstotal  = istLinkstotalIPV1
+  istRechtstotal = istRechtstotalIPV1
+  istReflexiv = istReflexivIPV1
+  istSymmetrisch = istSymmetrischIPV1
+  istTransitiv (IPV1 m) = istTransitivIPV1 m m
+
+
+-- Überprüft, ob für jede Landeshauptstadt mindestens ein Paar existiert, in dem sie der erste Eintrag ist.
+istLinkstotalIPV1 :: Defaultable Landeshauptstadt => IstPartnerstadtVon1 -> Bool
+istLinkstotalIPV1 (IPV1 (MT1 paare)) = all (\x -> any (\(a, _) -> a == x) paare) defaultValue
+
+-- Überprüft, ob für jede Landeshauptstadt mindestens ein Paar existiert, in dem sie der zweite Eintrag ist.
+istRechtstotalIPV1 :: Defaultable Landeshauptstadt => IstPartnerstadtVon1 -> Bool
+istRechtstotalIPV1 (IPV1 (MT1 paare)) = all (\x -> any (\(_, a) -> a == x) paare) defaultValue
+
+-- Überprüft, ob für jede Landeshauptstadt ein Paar (x,x) existiert.
+istReflexivIPV1 :: Defaultable Landeshauptstadt => IstPartnerstadtVon1 -> Bool
+istReflexivIPV1 (IPV1 (MT1 paare)) = all (\(x, y) -> x == y) paare
+
+-- Überprüft, ob für jedes Paar (x,y) auch das Paar (y,x) existiert.
+istSymmetrischIPV1 :: IstPartnerstadtVon1 -> Bool
+istSymmetrischIPV1 (IPV1 (MT1 paare)) = all (\(x, y) -> elem (y, x) paare) paare
+
+-- Überprüft, wenn es Paare (x, y) und (y, z) gibt, auch ein Paar (x, z) vorhanden sein muss
+istTransitivIPV1 ::  MT1 Staedtepaar -> MT1 Staedtepaar -> Bool
+istTransitivIPV1 _  (MT1 []) = True
+istTransitivIPV1 (MT1 orig) (MT1 ((l, l'):ps)) =
+  -- Schaue ob die Transitivitaet aller (l R l'')s gilt, dann schau weiter
+  all (`elem` orig) l_l''s && (istTransitivIPV1 (MT1 orig) . MT1) ps
+  where
+    -- Alle vorgegebene (l' R x)s
+    l'_l''s = filter (\pair -> fst pair == l') orig
+    l''s    = map (snd) l'_l''s
+    -- Alle zu pruefende Transitivitaeten aus l
+    l_l''s  = [(l, l'') | l'' <- l''s]
+
+
 
 allPairs :: [(Landeshauptstadt, Landeshauptstadt)]
 allPairs = [(x, y) | x <- defaultValue, y <- defaultValue]
 
 
---istLinkstotalMT1 :: Eq e => MT1(e, e) -> Bool
---istLinkstotalMT1 (MT1(x, y)) = 
 -- (b)
 data IstPartnerstadtVon3 = IPV3 (MT3 (Landeshauptstadt, Landeshauptstadt))
 
@@ -421,6 +451,14 @@ main = do
       ebIPV1 = IPV1 (MT1 [(E,E),(B,B)])
       bgIPV1 = IPV1 (MT1 [(B,B),(G,G)])
       biIPV1 = IPV1 (MT1 [(B,B),(I,I)])
+      beispiel2 = IPV1 (MT1 [(B, E), (E, G)])
+      linkstotal_true = IPV1 (MT1 [(B, B), (E, B), (G, B), (I, B), (K, B), (L, B), (P, B), (S, B), (W, B)])
+      rechtstotal_true = IPV1 (MT1[(B, B), (B, E), (B, G), (B, I), (B, K), (B, L), (B, P), (B, S), (B, W)])
+      symmetrisch_true = IPV1 (MT1 [(B, E), (E, B), (B, B)])
+      reflexiv_true = IPV1 (MT1 [(B, B), (E, E)])
+      transitiv_true = IPV1 (MT1 [(B, E), (E, G), (B, G)])
+      
+
   putStrLn ""
   putStrLn $ "leereMenge: " ++ zeige (leereMenge :: IstPartnerstadtVon1)
   putStrLn $ "allMenge  : " ++ zeige (allMenge   :: IstPartnerstadtVon1)
@@ -480,4 +518,17 @@ main = do
   putStrLn $ "sindQuerUeberlappend    {(B,B)} {(B,B),(E,E)}: " ++ (show $ sindQuerUeberlappend (bIPV1) (beIPV1))
   putStrLn $ "sindQuerUeberlappend {(B,B),(E,E)}    {(B,B)}: " ++ (show $ sindQuerUeberlappend (beIPV1) (bIPV1))
   putStrLn ""
-  --putStrLn $ "istLinkstotal {B, G}: " ++ (show $ istLinkstotal MT1())
+  putStrLn ("istLinkstotal {(B,B), (E,B), (G,B), (I,B), (K,B), (L,B), (P,B), (S,B), (W,B)} : " ++ show (istLinkstotal linkstotal_true)) 
+  putStrLn ("istLinkstotal {(B,E), (E,G)}: " ++ show (istLinkstotal beispiel2))
+  putStrLn ""
+  putStrLn ("istRechtstotal {(B,B), (B,E), (B,G), (B,I), (B,K), (B,L), (B,P), (B,S), (B,W)} : " ++ show (istRechtstotal rechtstotal_true))
+  putStrLn ("istRechtstotal {(B,E), (E,G)}: " ++ show (istRechtstotal beispiel2))
+  putStrLn ""
+  putStrLn ("istReflexiv {(B,B), (E,E)}: " ++ show (istReflexiv reflexiv_true))
+  putStrLn ("istReflexiv {(B,E), (E,G)}: " ++ show (istReflexiv beispiel2))
+  putStrLn ""
+  putStrLn ("istSymmetrisch {(B,E), (E,B), (B,B)}: " ++ show (istSymmetrisch symmetrisch_true))
+  putStrLn ("istSymmetrisch {(B,E), (E,G)}: " ++ show (istSymmetrisch beispiel2))
+  putStrLn ""
+  putStrLn ("transitiv_true {(B,E), (E,G), (B,G)}: " ++ show (istTransitiv transitiv_true))
+  putStrLn ("istTransitiv {(B,E), (E,G)}: " ++ show (istTransitiv beispiel2))
