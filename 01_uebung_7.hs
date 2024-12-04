@@ -252,13 +252,14 @@ class Menge m => Relation m where
 
 ---------------------------------------------------------------------------------A.4-----------------------------------------------------------------------------------
 -- (a)
-
+instance Defaultable Staedtepaar where
+    defaultValue = allPairs
 data IstPartnerstadtVon1 = IPV1 (MT1 (Landeshauptstadt, Landeshauptstadt))
 
 
 instance Menge IstPartnerstadtVon1 where
   leereMenge = IPV1(MT1 [])
-  allMenge = IPV1(MT1 allPairs)
+  allMenge = IPV1(MT1 defaultValue)
   istMenge (IPV1 m) = istMengeMT1 m
   vereinige (IPV1 m1) (IPV1 m2) = IPV1 $ vereinigeMT1 m1 m2
   schneide (IPV1 m1) (IPV1 m2) = IPV1 $ schneideMT1 m1 m2
@@ -309,9 +310,29 @@ allPairs :: [(Landeshauptstadt, Landeshauptstadt)]
 allPairs = [(x, y) | x <- defaultValue, y <- defaultValue]
 
 
--- (b)
+-- (b)  
 data IstPartnerstadtVon3 = IPV3 (MT3 (Landeshauptstadt, Landeshauptstadt))
 
+instance Menge IstPartnerstadtVon3 where
+  leereMenge   = IPV3 (MT3 (\_ -> False))
+  allMenge     = IPV3 (MT3 (\_ -> True ))
+  istMenge     = \_ -> True
+  vereinige (IPV3 m1) (IPV3 m2) = IPV3 $ vereinigeMT3 m1 m2
+  schneide (IPV3 m1) (IPV3 m2) = IPV3 $ schneideMT3 m1 m2
+  zieheab (IPV3 m1) (IPV3 m2) = IPV3 $ zieheabMT3 m1 m2
+  istTeilmenge (IPV3 m1) (IPV3 m2) = istTeilmengeMT3 m1 m2
+  zeige (IPV3 m1) = zeigeMT3 m1
+
+instance Relation IstPartnerstadtVon3 where
+  istLinkstotal  = istLinkstotalIPV3
+--  istRechtstotal = istRechtstotalIPV3
+--  istReflexiv = istReflexivIPV3
+--  istSymmetrisch = istSymmetrischIPV3
+-- istTransitiv 
+
+istLinkstotalIPV3 :: Defaultable Landeshauptstadt => IstPartnerstadtVon3 -> Bool
+istLinkstotalIPV3 (IPV3 (MT3 predicate)) = all (\x -> any (\(a, _) -> a == x) allPairs) defaultValue
+  where allPairs = [(a, b) | a <- defaultValue, b <- defaultValue, predicate (a, b)]
 ------------------------------------------------------------------------------ Tests ---------------------------------------------------------------------------------
 
 main = do
@@ -518,17 +539,84 @@ main = do
   putStrLn $ "sindQuerUeberlappend    {(B,B)} {(B,B),(E,E)}: " ++ (show $ sindQuerUeberlappend (bIPV1) (beIPV1))
   putStrLn $ "sindQuerUeberlappend {(B,B),(E,E)}    {(B,B)}: " ++ (show $ sindQuerUeberlappend (beIPV1) (bIPV1))
   putStrLn ""
-  putStrLn ("istLinkstotal {(B,B), (E,B), (G,B), (I,B), (K,B), (L,B), (P,B), (S,B), (W,B)} : " ++ show (istLinkstotal linkstotal_true)) 
-  putStrLn ("istLinkstotal {(B,E), (E,G)}: " ++ show (istLinkstotal beispiel2))
+  putStrLn $ "istLinkstotal {(B,B), (E,B), (G,B), (I,B), (K,B), (L,B), (P,B), (S,B), (W,B)} : " ++ show (istLinkstotal linkstotal_true)
+  putStrLn $ "istLinkstotal {(B,E), (E,G)}: " ++ show (istLinkstotal beispiel2)
   putStrLn ""
-  putStrLn ("istRechtstotal {(B,B), (B,E), (B,G), (B,I), (B,K), (B,L), (B,P), (B,S), (B,W)} : " ++ show (istRechtstotal rechtstotal_true))
-  putStrLn ("istRechtstotal {(B,E), (E,G)}: " ++ show (istRechtstotal beispiel2))
+  putStrLn $ "istRechtstotal {(B,B), (B,E), (B,G), (B,I), (B,K), (B,L), (B,P), (B,S), (B,W)} : " ++ show (istRechtstotal rechtstotal_true)
+  putStrLn $ "istRechtstotal {(B,E), (E,G)}: " ++ show (istRechtstotal beispiel2)
   putStrLn ""
-  putStrLn ("istReflexiv {(B,B), (E,E)}: " ++ show (istReflexiv reflexiv_true))
-  putStrLn ("istReflexiv {(B,E), (E,G)}: " ++ show (istReflexiv beispiel2))
+  putStrLn $ "istReflexiv {(B,B), (E,E)}: " ++ show (istReflexiv reflexiv_true)
+  putStrLn $ "istReflexiv {(B,E), (E,G)}: " ++ show (istReflexiv beispiel2)
   putStrLn ""
-  putStrLn ("istSymmetrisch {(B,E), (E,B), (B,B)}: " ++ show (istSymmetrisch symmetrisch_true))
-  putStrLn ("istSymmetrisch {(B,E), (E,G)}: " ++ show (istSymmetrisch beispiel2))
+  putStrLn $ "istSymmetrisch {(B,E), (E,B), (B,B)}: " ++ show (istSymmetrisch symmetrisch_true)
+  putStrLn $ "istSymmetrisch {(B,E), (E,G)}: " ++ show (istSymmetrisch beispiel2)
   putStrLn ""
-  putStrLn ("transitiv_true {(B,E), (E,G), (B,G)}: " ++ show (istTransitiv transitiv_true))
-  putStrLn ("istTransitiv {(B,E), (E,G)}: " ++ show (istTransitiv beispiel2))
+  putStrLn $ "transitiv_true {(B,E), (E,G), (B,G)}: " ++ show (istTransitiv transitiv_true)
+  putStrLn $ "istTransitiv {(B,E), (E,G)}: " ++ show (istTransitiv beispiel2)
+  putStrLn ""
+  putStrLn ""
+  putStrLn "----------(b)------------------------------------------------------------------------------------------------"
+  let bIPV3 = \e -> if e == (B,B)                                        then True else False
+      eIPV3 = \e -> if e == (E,E)                                        then True else False
+      beIPV3 = \e -> if e == (B,B) || e == (E,E)                         then True else False
+      ebIPV3 = \e -> if e == (E,E) || e == (B,B)                         then True else False
+      bgIPV3 = \e -> if e == (B,B) || e == (G,G)                         then True else False
+      biIPV3 = \e -> if e == (B,B) || e == (I,I)                         then True else False
+
+  putStrLn ""
+  putStrLn $ "leereMenge: " ++ zeige (leereMenge :: IstPartnerstadtVon3)
+  putStrLn $ "allMenge  : " ++ zeige (allMenge   :: IstPartnerstadtVon3)
+  putStrLn ""
+  putStrLn "istMenge ist die Protoimplementierung"
+  putStrLn ""
+  putStrLn $ "vereinige  {} {(B,B)}: " ++ (zeige . vereinige leereMenge $ (IPV3(MT3 bIPV3)))
+  putStrLn $ "vereinige {(B,B)} {(B,B)}: " ++ (zeige $ vereinige (IPV3(MT3 bIPV3)) (IPV3(MT3 bIPV3)))
+  putStrLn $ "vereinige {(B,B)} {(E,E)}: " ++ (zeige $ vereinige (IPV3(MT3 bIPV3)) (IPV3(MT3 eIPV3)))
+  putStrLn ""
+  putStrLn $ "schneide  {}    {(B,B)}: " ++ (zeige . schneide leereMenge $ IPV3(MT3 bIPV3))
+  putStrLn $ "schneide {(B,B)}    {(B,B)}: " ++ (zeige $ schneide (IPV3(MT3 bIPV3)) (IPV3(MT3 bIPV3)))
+  putStrLn $ "schneide {(B,B)} {B, E}: " ++ (zeige $ schneide (IPV3(MT3 bIPV3)) (IPV3(MT3 beIPV3)))
+  putStrLn ""
+  putStrLn $ "zieheab     {} {(B,B)}: " ++ (zeige . zieheab leereMenge $ IPV3(MT3 bIPV3))
+  putStrLn $ "zieheab    {(B,B)} {(B,B)}: " ++ (zeige $ zieheab (IPV3(MT3 bIPV3)) (IPV3(MT3 bIPV3)))
+  putStrLn $ "zieheab {(B,B),(E,E)} {(B,B)}: " ++ (zeige $ zieheab (IPV3(MT3 beIPV3)) (IPV3(MT3 bIPV3)))
+  putStrLn ""
+  putStrLn $ "komplementiere . zieheab allMenge $ {(B,B)}: " ++ (zeige . komplementiere . zieheab allMenge $ IPV3(MT3 bIPV3))
+  putStrLn ""
+  putStrLn $ "sindGleich    {(B,B)}    {(B,B)}: " ++ (show $ sindGleich (IPV3(MT3 bIPV3)) (IPV3(MT3 bIPV3)))
+  putStrLn $ "sindGleich    {(B,B)}    {(E,E)}: " ++ (show $ sindGleich (IPV3(MT3 bIPV3)) (IPV3(MT3 eIPV3)))
+  putStrLn $ "sindGleich {(B,B),(E,E)} {E, B}: " ++ (show $ sindGleich (IPV3(MT3 beIPV3)) (IPV3(MT3 eIPV3)))
+  putStrLn ""
+  putStrLn $ "sindUngleich    {(B,B)}    {(B,B)}: " ++ (show $ sindUngleich (IPV3(MT3 bIPV3)) (IPV3(MT3 bIPV3)))
+  putStrLn $ "sindUngleich    {(B,B)}    {(E,E)}: " ++ (show $ sindUngleich (IPV3(MT3 bIPV3)) (IPV3(MT3 eIPV3)))
+  putStrLn $ "sindUngleich {(B,B),(E,E)} {E, B}: " ++ (show $ sindUngleich (IPV3(MT3 beIPV3)) (IPV3(MT3 eIPV3)))
+  putStrLn ""
+  putStrLn $ "istTeilmenge    {(B,B)}    {(B,B)}: " ++ (show $ istTeilmenge (IPV3(MT3 bIPV3)) (IPV3(MT3 bIPV3)))
+  putStrLn $ "istTeilmenge {(B,B),(E,E)} {E, B}: " ++ (show $ istTeilmenge (IPV3(MT3 beIPV3)) (IPV3(MT3 eIPV3)))
+  putStrLn $ "istTeilmenge    {(B,B)} {(B,B),(E,E)}: " ++ (show $ istTeilmenge (IPV3(MT3 bIPV3)) (IPV3(MT3 beIPV3)))
+  putStrLn $ "istTeilmenge {(B,B),(E,E)}    {(B,B)}: " ++ (show $ istTeilmenge (IPV3(MT3 beIPV3)) (IPV3(MT3 bIPV3)))
+  putStrLn ""
+  putStrLn $ "istEchteTeilmenge    {(B,B)}    {(B,B)}: " ++ (show $ istEchteTeilmenge (IPV3(MT3 bIPV3)) (IPV3(MT3 bIPV3)))
+  putStrLn $ "istEchteTeilmenge {(B,B),(E,E)} {E, B}: " ++ (show $ istEchteTeilmenge (IPV3(MT3 beIPV3)) (IPV3(MT3 eIPV3)))
+  putStrLn $ "istEchteTeilmenge    {(B,B)} {(B,B),(E,E)}: " ++ (show $ istEchteTeilmenge (IPV3(MT3 bIPV3)) (IPV3(MT3 beIPV3)))
+  putStrLn $ "istEchteTeilmenge {(B,B),(E,E)}    {(B,B)}: " ++ (show $ istEchteTeilmenge (IPV3(MT3 beIPV3)) (IPV3(MT3 bIPV3)))
+  putStrLn ""
+  putStrLn $ "istObermenge    {(B,B)}    {(B,B)}: " ++ (show $ istObermenge (IPV3(MT3 bIPV3)) (IPV3(MT3 bIPV3)))
+  putStrLn $ "istObermenge {(B,B),(E,E)} {E, B}: " ++ (show $ istObermenge (IPV3(MT3 beIPV3)) (IPV3(MT3 eIPV3)))
+  putStrLn $ "istObermenge    {(B,B)} {(B,B),(E,E)}: " ++ (show $ istObermenge (IPV3(MT3 bIPV3)) (IPV3(MT3 beIPV3)))
+  putStrLn $ "istObermenge {(B,B),(E,E)}    {(B,B)}: " ++ (show $ istObermenge (IPV3(MT3 beIPV3)) (IPV3(MT3 bIPV3)))
+  putStrLn ""
+  putStrLn $ "istEchteObermenge    {(B,B)}    {(B,B)}: " ++ (show $ istEchteObermenge (IPV3(MT3 bIPV3)) (IPV3(MT3 bIPV3)))
+  putStrLn $ "istEchteObermenge {(B,B),(E,E)} {E, B}: " ++ (show $ istEchteObermenge (IPV3(MT3 beIPV3)) (IPV3(MT3 eIPV3)))
+  putStrLn $ "istEchteObermenge    {(B,B)} {(B,B),(E,E)}: " ++ (show $ istEchteObermenge (IPV3(MT3 bIPV3)) (IPV3(MT3 beIPV3)))
+  putStrLn $ "istEchteObermenge {(B,B),(E,E)}    {(B,B)}: " ++ (show $ istEchteObermenge (IPV3(MT3 beIPV3)) (IPV3(MT3 bIPV3)))
+  putStrLn ""
+  putStrLn $ "sindElementeFremd {(B,B)}    {(E,E)}: " ++ (show $ sindElementeFremd (IPV3(MT3 bIPV3)) (IPV3(MT3 eIPV3)))
+  putStrLn $ "sindElementeFremd {(B,B)} {(B,B),(E,E)}: " ++ (show $ sindElementeFremd (IPV3(MT3 bIPV3)) (IPV3(MT3 beIPV3)))
+  putStrLn ""
+  putStrLn $ "sindQuerUeberlappend    {(B,B)}    {(B,B)}: " ++ (show $ sindQuerUeberlappend (IPV3(MT3 bIPV3)) (IPV3(MT3 bIPV3)))
+  putStrLn $ "sindQuerUeberlappend    {(B,B)}    {(E,E)}: " ++ (show $ sindQuerUeberlappend (IPV3(MT3 bIPV3)) (IPV3(MT3 eIPV3)))
+  putStrLn $ "sindQuerUeberlappend {(B,B),(G,G)} {(B,B), (I,I)}: " ++ (show $ sindQuerUeberlappend (IPV3(MT3 bgIPV3)) (IPV3(MT3 biIPV3)))
+  putStrLn $ "sindQuerUeberlappend    {(B,B)} {(B,B),(E,E)}: " ++ (show $ sindQuerUeberlappend (IPV3(MT3 bIPV3)) (IPV3(MT3 beIPV3)))
+  putStrLn $ "sindQuerUeberlappend {(B,B),(E,E)}    {(B,B)}: " ++ (show $ sindQuerUeberlappend (IPV3(MT3 beIPV3)) (IPV3(MT3 bIPV3)))
+  putStrLn ""
