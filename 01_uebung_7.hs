@@ -276,15 +276,15 @@ instance Relation IstPartnerstadtVon1 where
 
 
 -- Überprüft, ob für jede Landeshauptstadt mindestens ein Paar existiert, in dem sie der erste Eintrag ist.
-istLinkstotalIPV1 :: Defaultable Landeshauptstadt => IstPartnerstadtVon1 -> Bool
+istLinkstotalIPV1 :: IstPartnerstadtVon1 -> Bool
 istLinkstotalIPV1 (IPV1 (MT1 paare)) = all (\x -> any (\(a, _) -> a == x) paare) defaultValue
 
 -- Überprüft, ob für jede Landeshauptstadt mindestens ein Paar existiert, in dem sie der zweite Eintrag ist.
-istRechtstotalIPV1 :: Defaultable Landeshauptstadt => IstPartnerstadtVon1 -> Bool
+istRechtstotalIPV1 :: IstPartnerstadtVon1 -> Bool
 istRechtstotalIPV1 (IPV1 (MT1 paare)) = all (\x -> any (\(_, a) -> a == x) paare) defaultValue
 
 -- Überprüft, ob für jede Landeshauptstadt ein Paar (x,x) existiert.
-istReflexivIPV1 :: Defaultable Landeshauptstadt => IstPartnerstadtVon1 -> Bool
+istReflexivIPV1 :: IstPartnerstadtVon1 -> Bool
 istReflexivIPV1 (IPV1 (MT1 paare)) = all (\(x, y) -> x == y) paare
 
 -- Überprüft, ob für jedes Paar (x,y) auch das Paar (y,x) existiert.
@@ -332,17 +332,17 @@ instance Relation IstPartnerstadtVon3 where
     where allPairsMT3 = [(a, b) | a <- defaultValue, b <- defaultValue, predicate (a, b)]
 
 -- Überprüft, ob für jede Landeshauptstadt mindestens ein Paar existiert, in dem sie der erste Eintrag ist.
-istLinkstotalIPV3 :: Defaultable Landeshauptstadt => IstPartnerstadtVon3 -> Bool
+istLinkstotalIPV3 :: IstPartnerstadtVon3 -> Bool
 istLinkstotalIPV3 (IPV3 (MT3 predicate)) = all (\x -> any (\(a, _) -> a == x) allPairsMT3) defaultValue
   where allPairsMT3 = [(a, b) | a <- defaultValue, b <- defaultValue, predicate (a, b)]
 
 -- Überprüft, ob für jede Landeshauptstadt ein Paar (x,x) existiert.
-istRechtstotalIPV3 :: Defaultable Landeshauptstadt => IstPartnerstadtVon3 -> Bool
+istRechtstotalIPV3 :: IstPartnerstadtVon3 -> Bool
 istRechtstotalIPV3 (IPV3 (MT3 predicate)) = all (\x -> any (\(_, a) -> a == x) allPairsMT3) defaultValue
   where allPairsMT3 = [(a, b) | a <- defaultValue, b <- defaultValue, predicate (a, b)]
 
 -- Überprüft, ob für jedes Paar (x,y) auch das Paar (y,x) existiert.
-istReflexivIPV3 :: Defaultable Landeshauptstadt => IstPartnerstadtVon3 -> Bool
+istReflexivIPV3 :: IstPartnerstadtVon3 -> Bool
 istReflexivIPV3 (IPV3 (MT3 predicate)) =  all (\(x, y) -> x == y) allPairsMT3
   where allPairsMT3 = [(a, b) | a <- defaultValue, b <- defaultValue, predicate (a, b)]
 
