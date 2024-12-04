@@ -191,6 +191,7 @@ istKeinElement c = not . istElement c
 
 isDefaultChar :: Char -> Bool
 isDefaultChar = (`elem` defaultValue)
+
 -- !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 --------------------------------------------------------------------------Aufgabenblatt 7 .hs--------------------------------------------------------------------------
 
@@ -206,7 +207,9 @@ newtype Staedtepaar2 = SP2 (Landeshauptstadt,Landeshauptstadt) deriving (Show, E
 --  die charakteristische Funktionen sind
 data Staedtepaar3 = SP3 ((Landeshauptstadt,Landeshauptstadt) -> Bool) 
 data Staedtepaar4 = SP4 (Landeshauptstadt -> Landeshauptstadt -> Bool) -- Ähnlich wie Staedtepaar3
+
 ---------------------------------------------------------------------------------A.2-----------------------------------------------------------------------------------
+
 instance Defaultable Landeshauptstadt where
     defaultValue = [minBound .. maxBound]
 -- (a)
@@ -222,14 +225,62 @@ instance Menge (MT1 Landeshauptstadt) where
 
 -- (b)
 instance Menge (MT3 Landeshauptstadt) where
-  leereMenge = MT3 (\_ -> False)
-  allMenge = MT3 (\_ -> True )
-  istMenge = \_ -> True
-  vereinige = vereinigeMT3
-  schneide = schneideMT3
-  zieheab = zieheabMT3
+  leereMenge   = MT3 (\_ -> False)
+  allMenge     = MT3 (\_ -> True )
+  istMenge     = \_ -> True
+  vereinige    = vereinigeMT3
+  schneide     = schneideMT3
+  zieheab      = zieheabMT3
   istTeilmenge = istTeilmengeMT3
-  zeige = zeigeMT3
+  zeige        = zeigeMT3
+
+---------------------------------------------------------------------------------A.3-----------------------------------------------------------------------------------
+class Menge m => Relation m where
+  istLeereRelation :: m -> Bool
+  istLeereRelation = sindGleich leereMenge
+  istAllRelation :: m -> Bool
+  istAllRelation = sindGleich allMenge
+  istLinkstotal :: m -> Bool
+  istRechtstotal :: m -> Bool
+  istReflexiv :: m -> Bool
+  istSymmetrisch :: m -> Bool
+  istTransitiv :: m -> Bool
+  istQuasiOrdnung :: m -> Bool
+  istQuasiOrdnung m = istReflexiv m && istTransitiv m
+  istAequivalenzrelation :: m -> Bool
+  istAequivalenzrelation m = istQuasiOrdnung m && istSymmetrisch m
+
+---------------------------------------------------------------------------------A.4-----------------------------------------------------------------------------------
+-- (a)
+
+data IstPartnerstadtVon1 = IPV1 (MT1 (Landeshauptstadt, Landeshauptstadt))
+
+
+instance Menge IstPartnerstadtVon1 where
+  leereMenge = IPV1(MT1 [])
+  allMenge = IPV1(MT1 allPairs)
+  istMenge (IPV1 m) = istMengeMT1 m
+  vereinige (IPV1 m1) (IPV1 m2) = IPV1 $ vereinigeMT1 m1 m2
+  schneide (IPV1 m1) (IPV1 m2) = IPV1 $ schneideMT1 m1 m2
+  zieheab (IPV1 m1) (IPV1 m2) = IPV1 $ zieheabMT1 m1 m2
+  istTeilmenge (IPV1 m1) (IPV1 m2) = istTeilmengeMT1 m1 m2
+  zeige (IPV1 m1) = zeigeMT1 m1
+
+instance Relation IstPartnerstadtVon1 where
+--  istLinkstotal  = istLinkstotalMT1
+--  istRechtstotal :: m -> Bool
+--  istReflexiv :: m -> Bool
+--  istSymmetrisch :: m -> Bool
+--  istTransitiv :: m -> Bool
+
+allPairs :: [(Landeshauptstadt, Landeshauptstadt)]
+allPairs = [(x, y) | x <- defaultValue, y <- defaultValue]
+
+
+--istLinkstotalMT1 :: Eq e => MT1(e, e) -> Bool
+--istLinkstotalMT1 (MT1(x, y)) = 
+-- (b)
+data IstPartnerstadtVon3 = IPV3 (MT3 (Landeshauptstadt, Landeshauptstadt))
 
 ------------------------------------------------------------------------------ Tests ---------------------------------------------------------------------------------
 
@@ -304,7 +355,7 @@ main = do
       eb3 = \e -> if e == 'E' || e == 'B'              then True else False
       bg3 = \e -> if e == 'B' || e == 'G'              then True else False
       bi3 = \e -> if e == 'B' || e == 'I'              then True else False
-      
+
   putStrLn $ "leereMenge: " ++ zeige (leereMenge :: MT3 Landeshauptstadt)
   putStrLn $ "allMenge  : " ++ zeige (allMenge   :: MT3 Landeshauptstadt)
   putStrLn ""
@@ -361,3 +412,72 @@ main = do
   putStrLn $ "sindQuerUeberlappend    {B} {B, E}: " ++ (show $ sindQuerUeberlappend (MT3 b3) (MT3 be3))
   putStrLn $ "sindQuerUeberlappend {B, E}    {B}: " ++ (show $ sindQuerUeberlappend (MT3 be3) (MT3 b3))
   putStrLn ""
+  putStrLn "-----------------------------------------------------A.4-----------------------------------------------------"
+  putStrLn ""
+  putStrLn "----------(a)------------------------------------------------------------------------------------------------"
+  let bIPV1 = IPV1 (MT1 [(B,B)])
+      eIPV1 = IPV1 (MT1 [(E,E)])
+      beIPV1 = IPV1 (MT1 [(B,B),(E,E)])
+      ebIPV1 = IPV1 (MT1 [(E,E),(B,B)])
+      bgIPV1 = IPV1 (MT1 [(B,B),(G,G)])
+      biIPV1 = IPV1 (MT1 [(B,B),(I,I)])
+  putStrLn ""
+  putStrLn $ "leereMenge: " ++ zeige (leereMenge :: IstPartnerstadtVon1)
+  putStrLn $ "allMenge  : " ++ zeige (allMenge   :: IstPartnerstadtVon1)
+  putStrLn ""
+  putStrLn $ "istMenge     {}: " ++ (show $ istMenge (leereMenge :: IstPartnerstadtVon1))
+  putStrLn $ "istMenge {(B,E), (B,E)}: " ++ (show $ istMenge $ IPV1 (MT1 [(B,E), (B,E)]))
+  putStrLn $ "istMenge {(B,E), (E,B)}: " ++ (show $ istMenge $ IPV1 (MT1 [(B,E), (E,B)]))
+  putStrLn ""
+  putStrLn $ "vereinige  {} {(B,B)}: " ++ (zeige . vereinige leereMenge $ bIPV1)
+  putStrLn $ "vereinige {(B,B)} {(B,B)}: " ++ (zeige $ vereinige (bIPV1) (bIPV1))
+  putStrLn $ "vereinige {(B,B)} {(E,E)}: " ++ (zeige $ vereinige (bIPV1) (eIPV1))
+  putStrLn ""
+  putStrLn $ "schneide  {}    {(B,B)}: " ++ (zeige . schneide leereMenge $ bIPV1)
+  putStrLn $ "schneide {(B,B)}    {(B,B)}: " ++ (zeige $ schneide (bIPV1) (bIPV1))
+  putStrLn $ "schneide {(B,B)} {B, E}: " ++ (zeige $ schneide (bIPV1) (beIPV1))
+  putStrLn ""
+  putStrLn $ "zieheab     {} {(B,B)}: " ++ (zeige . zieheab leereMenge $ bIPV1)
+  putStrLn $ "zieheab    {(B,B)} {(B,B)}: " ++ (zeige $ zieheab (bIPV1) (bIPV1))
+  putStrLn $ "zieheab {(B,B),(E,E)} {(B,B)}: " ++ (zeige $ zieheab (beIPV1) (bIPV1))
+  putStrLn ""
+  putStrLn $ "komplementiere . zieheab allMenge $ {(B,B)}: " ++ (zeige . komplementiere . zieheab allMenge $ bIPV1)
+  putStrLn ""
+  putStrLn $ "sindGleich    {(B,B)}    {(B,B)}: " ++ (show $ sindGleich (bIPV1) (bIPV1))
+  putStrLn $ "sindGleich    {(B,B)}    {(E,E)}: " ++ (show $ sindGleich (bIPV1) (eIPV1))
+  putStrLn $ "sindGleich {(B,B),(E,E)} {E, B}: " ++ (show $ sindGleich (beIPV1) (ebIPV1))
+  putStrLn ""
+  putStrLn $ "sindUngleich    {(B,B)}    {(B,B)}: " ++ (show $ sindUngleich (bIPV1) (bIPV1))
+  putStrLn $ "sindUngleich    {(B,B)}    {(E,E)}: " ++ (show $ sindUngleich (bIPV1) (eIPV1))
+  putStrLn $ "sindUngleich {(B,B),(E,E)} {E, B}: " ++ (show $ sindUngleich (beIPV1) (ebIPV1))
+  putStrLn ""
+  putStrLn $ "istTeilmenge    {(B,B)}    {(B,B)}: " ++ (show $ istTeilmenge (bIPV1) (bIPV1))
+  putStrLn $ "istTeilmenge {(B,B),(E,E)} {E, B}: " ++ (show $ istTeilmenge (beIPV1) (ebIPV1))
+  putStrLn $ "istTeilmenge    {(B,B)} {(B,B),(E,E)}: " ++ (show $ istTeilmenge (bIPV1) (beIPV1))
+  putStrLn $ "istTeilmenge {(B,B),(E,E)}    {(B,B)}: " ++ (show $ istTeilmenge (beIPV1) (bIPV1))
+  putStrLn ""
+  putStrLn $ "istEchteTeilmenge    {(B,B)}    {(B,B)}: " ++ (show $ istEchteTeilmenge (bIPV1) (bIPV1))
+  putStrLn $ "istEchteTeilmenge {(B,B),(E,E)} {E, B}: " ++ (show $ istEchteTeilmenge (beIPV1) (ebIPV1))
+  putStrLn $ "istEchteTeilmenge    {(B,B)} {(B,B),(E,E)}: " ++ (show $ istEchteTeilmenge (bIPV1) (beIPV1))
+  putStrLn $ "istEchteTeilmenge {(B,B),(E,E)}    {(B,B)}: " ++ (show $ istEchteTeilmenge (beIPV1) (bIPV1))
+  putStrLn ""
+  putStrLn $ "istObermenge    {(B,B)}    {(B,B)}: " ++ (show $ istObermenge (bIPV1) (bIPV1))
+  putStrLn $ "istObermenge {(B,B),(E,E)} {E, B}: " ++ (show $ istObermenge (beIPV1) (ebIPV1))
+  putStrLn $ "istObermenge    {(B,B)} {(B,B),(E,E)}: " ++ (show $ istObermenge (bIPV1) (beIPV1))
+  putStrLn $ "istObermenge {(B,B),(E,E)}    {(B,B)}: " ++ (show $ istObermenge (beIPV1) (bIPV1))
+  putStrLn ""
+  putStrLn $ "istEchteObermenge    {(B,B)}    {(B,B)}: " ++ (show $ istEchteObermenge (bIPV1) (bIPV1))
+  putStrLn $ "istEchteObermenge {(B,B),(E,E)} {E, B}: " ++ (show $ istEchteObermenge (beIPV1) (ebIPV1))
+  putStrLn $ "istEchteObermenge    {(B,B)} {(B,B),(E,E)}: " ++ (show $ istEchteObermenge (bIPV1) (beIPV1))
+  putStrLn $ "istEchteObermenge {(B,B),(E,E)}    {(B,B)}: " ++ (show $ istEchteObermenge (beIPV1) (bIPV1))
+  putStrLn ""
+  putStrLn $ "sindElementeFremd {(B,B)}    {(E,E)}: " ++ (show $ sindElementeFremd (bIPV1) (eIPV1))
+  putStrLn $ "sindElementeFremd {(B,B)} {(B,B),(E,E)}: " ++ (show $ sindElementeFremd (bIPV1) (beIPV1))
+  putStrLn ""
+  putStrLn $ "sindQuerUeberlappend    {(B,B)}    {(B,B)}: " ++ (show $ sindQuerUeberlappend (bIPV1) (bIPV1))
+  putStrLn $ "sindQuerUeberlappend    {(B,B)}    {(E,E)}: " ++ (show $ sindQuerUeberlappend (bIPV1) (eIPV1))
+  putStrLn $ "sindQuerUeberlappend {(B,B),(G,G)} {(B,B), (I,I)}: " ++ (show $ sindQuerUeberlappend (bgIPV1) (biIPV1))
+  putStrLn $ "sindQuerUeberlappend    {(B,B)} {(B,B),(E,E)}: " ++ (show $ sindQuerUeberlappend (bIPV1) (beIPV1))
+  putStrLn $ "sindQuerUeberlappend {(B,B),(E,E)}    {(B,B)}: " ++ (show $ sindQuerUeberlappend (beIPV1) (bIPV1))
+  putStrLn ""
+  --putStrLn $ "istLinkstotal {B, G}: " ++ (show $ istLinkstotal MT1())
