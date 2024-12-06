@@ -251,6 +251,23 @@ class Menge m => Relation m where
   istAequivalenzrelation m = istQuasiOrdnung m && istSymmetrisch m
 
 ---------------------------------------------------------------------------------A.4-----------------------------------------------------------------------------------
+
+allPairs :: [(Landeshauptstadt, Landeshauptstadt)]
+allPairs = [(x, y) | x <- defaultValue, y <- defaultValue]
+
+-- Überprüft, wenn es Paare (x, y) und (y, z) gibt, auch ein Paar (x, z) vorhanden sein muss
+istTransitivStaedtepaar :: [Staedtepaar] -> [Staedtepaar] -> Bool
+istTransitivStaedtepaar _  [] = True
+istTransitivStaedtepaar orig ((l, l'):ps) =
+  -- Schaue ob die Transitivitaet aller (l R l'')s gilt, dann schau weiter
+  all (`elem` orig) l_l''s && (istTransitivStaedtepaar (orig)) ps
+  where
+    -- Alle vorgegebene (l' R x)s
+    l'_l''s = filter (\pair -> fst pair == l') orig
+    l''s    = map (snd) l'_l''s
+    -- Alle zu pruefende Transitivitaeten aus l
+    l_l''s  = [(l, l'') | l'' <- l''s]
+
 -- (a)
 instance Defaultable Staedtepaar where
     defaultValue = allPairs
@@ -272,7 +289,7 @@ instance Relation IstPartnerstadtVon1 where
   istRechtstotal = istRechtstotalIPV1
   istReflexiv = istReflexivIPV1
   istSymmetrisch = istSymmetrischIPV1
-  istTransitiv (IPV1 m) = istTransitivIPV1 m m
+  istTransitiv (IPV1 (MT1 paare)) = istTransitivStaedtepaar paare paare
 
 
 -- Überprüft, ob für jede Landeshauptstadt mindestens ein Paar existiert, in dem sie der erste Eintrag ist.
@@ -294,24 +311,6 @@ istReflexivIPV1 (IPV1 (MT1 paare)) = length allPaare == length allUnikalStaedte
 istSymmetrischIPV1 :: IstPartnerstadtVon1 -> Bool
 istSymmetrischIPV1 (IPV1 (MT1 paare)) = all (\(x, y) -> elem (y, x) paare) paare
 
--- Überprüft, wenn es Paare (x, y) und (y, z) gibt, auch ein Paar (x, z) vorhanden sein muss
-istTransitivIPV1 ::  MT1 Staedtepaar -> MT1 Staedtepaar -> Bool
-istTransitivIPV1 _  (MT1 []) = True
-istTransitivIPV1 (MT1 orig) (MT1 ((l, l'):ps)) =
-  -- Schaue ob die Transitivitaet aller (l R l'')s gilt, dann schau weiter
-  all (`elem` orig) l_l''s && (istTransitivIPV1 (MT1 orig) . MT1) ps
-  where
-    -- Alle vorgegebene (l' R x)s
-    l'_l''s = filter (\pair -> fst pair == l') orig
-    l''s    = map (snd) l'_l''s
-    -- Alle zu pruefende Transitivitaeten aus l
-    l_l''s  = [(l, l'') | l'' <- l''s]
-
-
-
-allPairs :: [(Landeshauptstadt, Landeshauptstadt)]
-allPairs = [(x, y) | x <- defaultValue, y <- defaultValue]
-
 
 -- (b)  
 data IstPartnerstadtVon3 = IPV3 (MT3 (Landeshauptstadt, Landeshauptstadt))
@@ -331,7 +330,7 @@ instance Relation IstPartnerstadtVon3 where
   istRechtstotal = istRechtstotalIPV3
   istReflexiv = istReflexivIPV3
   istSymmetrisch = istSymmetrischIPV3
-  istTransitiv (IPV3 (MT3 predicate)) = istTransitivIPV1 (MT1 allPairsMT3) (MT1 allPairsMT3)
+  istTransitiv (IPV3 (MT3 predicate)) = istTransitivStaedtepaar allPairsMT3 allPairsMT3
     where allPairsMT3 = [(a, b) | a <- defaultValue, b <- defaultValue, predicate (a, b)]
 
 -- Überprüft, ob für jede Landeshauptstadt mindestens ein Paar existiert, in dem sie der erste Eintrag ist.
@@ -575,7 +574,7 @@ main = do
   putStrLn $ "istSymmetrisch {(B,E), (E,B), (B,B)}: " ++ show (istSymmetrisch symmetrisch_true)
   putStrLn $ "istSymmetrisch {(B,E), (E,G)}: " ++ show (istSymmetrisch beispiel2)
   putStrLn ""
-  putStrLn $ "transitiv_true {(B,E), (E,G), (B,G)}: " ++ show (istTransitiv transitiv_true)
+  putStrLn $ "istTransitiv {(B,E), (E,G), (B,G)}: " ++ show (istTransitiv transitiv_true)
   putStrLn $ "istTransitiv {(B,E), (E,G)}: " ++ show (istTransitiv beispiel2)
   putStrLn ""
   putStrLn ""
@@ -662,6 +661,6 @@ main = do
   putStrLn $ "istSymmetrisch {(B,E), (E,B), (B,B)}: " ++ show (istSymmetrisch (IPV3(MT3 symmetrisch_true)))
   putStrLn $ "istSymmetrisch {(B,E), (E,G)}: " ++ show (istSymmetrisch (IPV3(MT3 beispiel2)))
   putStrLn ""
-  putStrLn $ "transitiv_true {(B,E), (E,G), (B,G)}: " ++ show (istTransitiv (IPV3(MT3 transitiv_true)))
+  putStrLn $ "istTransitiv {(B,E), (E,G), (B,G)}: " ++ show (istTransitiv (IPV3(MT3 transitiv_true)))
   putStrLn $ "istTransitiv {(B,E), (E,G)}: " ++ show (istTransitiv (IPV3(MT3 beispiel2)))
   putStrLn ""
