@@ -285,7 +285,10 @@ istRechtstotalIPV1 (IPV1 (MT1 paare)) = all (\x -> any (\(_, a) -> a == x) paare
 
 -- Überprüft, ob für jede Landeshauptstadt ein Paar (x,x) existiert.
 istReflexivIPV1 :: IstPartnerstadtVon1 -> Bool
-istReflexivIPV1 (IPV1 (MT1 paare)) = all (\(x, y) -> x == y) paare
+istReflexivIPV1 (IPV1 (MT1 paare)) = length allPaare == length allUnikalStaedte
+  where
+    allPaare = filter (\(x, y) -> x == y) paare
+    allUnikalStaedte = nub $ map fst paare ++ map snd paare
 
 -- Überprüft, ob für jedes Paar (x,y) auch das Paar (y,x) existiert.
 istSymmetrischIPV1 :: IstPartnerstadtVon1 -> Bool
@@ -343,8 +346,10 @@ istRechtstotalIPV3 (IPV3 (MT3 predicate)) = all (\x -> any (\(_, a) -> a == x) a
 
 -- Überprüft, ob für jedes Paar (x,y) auch das Paar (y,x) existiert.
 istReflexivIPV3 :: IstPartnerstadtVon3 -> Bool
-istReflexivIPV3 (IPV3 (MT3 predicate)) =  all (\(x, y) -> x == y) allPairsMT3
+istReflexivIPV3 (IPV3 (MT3 predicate)) =  length allPaare == length allUnikalStaedte
   where allPairsMT3 = [(a, b) | a <- defaultValue, b <- defaultValue, predicate (a, b)]
+        allPaare = filter (\(x, y) -> x == y) allPairsMT3
+        allUnikalStaedte = nub $ map fst allPairsMT3 ++ map snd allPairsMT3
 
 -- Überprüft, ob für jedes Paar (x,y) auch das Paar (y,x) existiert.
 istSymmetrischIPV3 :: IstPartnerstadtVon3 -> Bool
@@ -495,7 +500,7 @@ main = do
       linkstotal_true = IPV1 (MT1 [(B, B), (E, B), (G, B), (I, B), (K, B), (L, B), (P, B), (S, B), (W, B)])
       rechtstotal_true = IPV1 (MT1[(B, B), (B, E), (B, G), (B, I), (B, K), (B, L), (B, P), (B, S), (B, W)])
       symmetrisch_true = IPV1 (MT1 [(B, E), (E, B), (B, B)])
-      reflexiv_true = IPV1 (MT1 [(B, B), (E, E)])
+      reflexiv_true = IPV1 (MT1 [(B, B), (E, E), (B, E)])
       transitiv_true = IPV1 (MT1 [(B, E), (E, G), (B, G)])
       
 
@@ -564,7 +569,7 @@ main = do
   putStrLn $ "istRechtstotal {(B,B), (B,E), (B,G), (B,I), (B,K), (B,L), (B,P), (B,S), (B,W)} : " ++ show (istRechtstotal rechtstotal_true)
   putStrLn $ "istRechtstotal {(B,E), (E,G)}: " ++ show (istRechtstotal beispiel2)
   putStrLn ""
-  putStrLn $ "istReflexiv {(B,B), (E,E)}: " ++ show (istReflexiv reflexiv_true)
+  putStrLn $ "istReflexiv {(B, B), (E, E), (B, E)}: " ++ show (istReflexiv reflexiv_true)
   putStrLn $ "istReflexiv {(B,E), (E,G)}: " ++ show (istReflexiv beispiel2)
   putStrLn ""
   putStrLn $ "istSymmetrisch {(B,E), (E,B), (B,B)}: " ++ show (istSymmetrisch symmetrisch_true)
@@ -585,7 +590,7 @@ main = do
       beispiel2 = \e -> if e == (B,E) || e == (E, G)                        then True else False
       rechtstotal_true = \e -> if e == (B,B) || e == (B, E) || e == (B, G) || e == (B, I) || e == (B, K) || e == (B, L) || e == (B, P) || e == (B, S) || e == (B, W)  then True else False
       symmetrisch_true = \e -> if e == (B,E) || e == (E, B) || e == (B, B)  then True else False
-      reflexiv_true = \e -> if e == (B,B) || e == (E, E)                    then True else False
+      reflexiv_true = \e -> if e == (B,B) || e == (E, E) || e == (B, E)     then True else False
       transitiv_true = \e -> if e == (B,E) || e == (E, G) || e == (B, G)    then True else False
 
   putStrLn ""
@@ -651,7 +656,7 @@ main = do
   putStrLn $ "istRechtstotal {(B,B), (B,E), (B,G), (B,I), (B,K), (B,L), (B,P), (B,S), (B,W)} : " ++ show (istRechtstotal (IPV3(MT3 rechtstotal_true)))
   putStrLn $ "istRechtstotal {(B,E), (E,G)}: " ++ show (istRechtstotal (IPV3(MT3 beispiel2)))
   putStrLn ""
-  putStrLn $ "istReflexiv {(B,B), (E,E)}: " ++ show (istReflexiv (IPV3(MT3 reflexiv_true)))
+  putStrLn $ "istReflexiv {(B,B), (E,E), (B,E)}: " ++ show (istReflexiv (IPV3(MT3 reflexiv_true)))
   putStrLn $ "istReflexiv {(B,E), (E,G)}: " ++ show (istReflexiv (IPV3(MT3 beispiel2)))
   putStrLn ""
   putStrLn $ "istSymmetrisch {(B,E), (E,B), (B,B)}: " ++ show (istSymmetrisch (IPV3(MT3 symmetrisch_true)))
